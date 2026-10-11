@@ -1,0 +1,12 @@
+# Dependencies (electron alone is ~180 MB; never commit it)
+node_modules/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build output (the portable package; ship it as a Release asset, not as source)
+dist/

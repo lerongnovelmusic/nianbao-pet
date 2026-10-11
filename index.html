@@ -1,0 +1,872 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>年糕</title>
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden;font-family:-apple-system,Segoe UI,Microsoft YaHei,sans-serif;-webkit-user-select:none;user-select:none}
+  #win{position:relative;width:320px;padding:44px 0 10px;box-sizing:border-box}
+  .balloon{position:absolute;top:4px;left:50%;transform:translateX(-50%);max-width:300px;background:linear-gradient(160deg,rgba(255,255,255,.98),rgba(238,246,255,.98));color:#1c3c6e;border:1px solid rgba(120,165,225,.45);border-radius:14px;padding:6px 12px;font-size:12.5px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 8px 20px rgba(40,80,140,.22);z-index:3}
+  .balloon::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(255,255,255,.98);border-bottom:none}
+  .balloon.talk{border-color:#3b82f6;box-shadow:0 8px 24px rgba(59,130,246,.4)}
+  .stage{position:relative;width:268px;margin:0 auto}
+  .img{display:block;width:268px;height:auto;border-radius:20px;cursor:grab;transform-origin:50% 100%;
+    animation:bob 5.2s ease-in-out infinite;
+    filter:drop-shadow(0 10px 18px rgba(20,45,90,.34));transition:transform .18s ease}
+  .stage.hover .img{transform:scale(1.04)}
+  .stage.drag .img{cursor:grabbing;animation:none}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(.5deg)}}
+  .bar{display:flex;gap:6px;justify-content:center;margin-top:2px}
+  .rbtn{width:30px;height:30px;border-radius:50%;border:1px solid rgba(120,165,225,.6);
+    background:linear-gradient(160deg,#fff,#eaf3ff);font-size:15px;line-height:1;cursor:pointer;
+    box-shadow:0 4px 12px rgba(30,90,200,.26);transition:transform .15s ease}
+  .rbtn:hover{transform:scale(1.12)}
+  .rbtn.on{background:linear-gradient(160deg,#3b82f6,#1d5fd0);color:#fff;border-color:transparent}
+
+  .subjects{display:none;margin:8px auto 0;width:296px;background:rgba(255,255,255,.97);
+    border:1px solid rgba(120,165,225,.55);border-radius:14px;padding:8px;box-sizing:border-box;
+    box-shadow:0 10px 26px rgba(40,80,140,.24)}
+  .subjects.show{display:block}
+  .shead{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  .stitle{color:#1c3c6e;font-size:12px;font-weight:600;flex:1}
+  .sfile{color:#9db4d2;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+  .slist{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow:auto}
+  .slist::-webkit-scrollbar{width:7px}
+  .slist::-webkit-scrollbar-thumb{background:rgba(120,160,220,.5);border-radius:5px}
+  .subj{display:flex;align-items:center;gap:7px;background:#f4f9ff;border:1px solid rgba(120,165,225,.4);
+    border-radius:9px;padding:7px 9px;cursor:pointer;font-size:12.5px;color:#1c3c6e}
+  .subj:hover{background:#e8f2ff;border-color:#3b82f6}
+  .subj.missing{opacity:.55;cursor:default}
+  .subj .sn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .subj .sx{border:none;background:transparent;color:#8aa6cc;font-size:13px;line-height:1;cursor:pointer;padding:1px 3px}
+  .subj .sx:hover{color:#e05252}
+  .sempty{color:#7c96ba;font-size:11.5px;text-align:center;padding:12px 6px;line-height:1.7}
+  .sfoot{display:flex;gap:6px;margin-top:8px}
+  .sbtn{flex:1;border:1px solid rgba(120,165,225,.55);background:#eef6ff;color:#2a5bb0;
+    border-radius:8px;font-size:11.5px;padding:6px 6px;cursor:pointer}
+  .sbtn:hover{background:#e2eefc}
+  .sbtn.primary{background:linear-gradient(160deg,#3b82f6,#1d5fd0);color:#fff;border-color:transparent}
+
+  /* 📅 日程 / deadline */
+  .rbtn{position:relative}
+  .badge{position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;padding:0 3px;box-sizing:border-box;
+    border-radius:8px;background:#e05252;color:#fff;font-size:9.5px;line-height:15px;text-align:center;
+    box-shadow:0 2px 6px rgba(200,60,60,.5);display:none}
+  .badge.show{display:block}
+  .calendar{display:none;margin:8px auto 0;width:296px;background:rgba(255,255,255,.97);
+    border:1px solid rgba(120,165,225,.55);border-radius:14px;padding:8px;box-sizing:border-box;
+    box-shadow:0 10px 26px rgba(40,80,140,.24)}
+  .calendar.show{display:block}
+  .cform{display:flex;flex-direction:column;gap:5px;padding-bottom:8px;margin-bottom:6px;
+    border-bottom:1px solid rgba(120,165,225,.28)}
+  .cin{border:1px solid rgba(120,165,225,.55);border-radius:8px;padding:6px 8px;font-size:12px;
+    color:#1c3c6e;outline:none;background:#f6faff;font-family:inherit;box-sizing:border-box;width:100%}
+  .cin:focus{border-color:#3b82f6}
+  .crow{display:flex;gap:5px}
+  .crow .cin{flex:1;min-width:0}
+  .clist{display:flex;flex-direction:column;gap:5px;max-height:290px;overflow:auto}
+  .clist::-webkit-scrollbar{width:7px}
+  .clist::-webkit-scrollbar-thumb{background:rgba(120,160,220,.5);border-radius:5px}
+  .ev{display:flex;align-items:flex-start;gap:7px;background:#f4f9ff;border:1px solid rgba(120,165,225,.4);
+    border-radius:9px;padding:7px 9px;font-size:12.5px;color:#1c3c6e}
+  .ev.done{opacity:.5}
+  .ev.done .evt{text-decoration:line-through}
+  .ev.soon{background:#fff6e8;border-color:#f0b866}
+  .ev.late{background:#fdeeee;border-color:#e58f8f}
+  .evtick{border:none;background:transparent;font-size:14px;line-height:1.1;cursor:pointer;padding:0 2px;flex:none;color:#8aa6cc}
+  .evtick:hover{color:#22a06b}
+  .ev.soon .evtick,.ev.late .evtick{color:#c98a2e}
+  .evbody{flex:1;min-width:0}
+  .evt{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .evm{font-size:10.5px;color:#7c96ba;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .evchip{flex:none;font-size:10px;padding:2px 6px;border-radius:999px;background:#e6eefb;color:#3f6296;white-space:nowrap}
+  .ev.soon .evchip{background:#fbe3bd;color:#8a5a12}
+  .ev.late .evchip{background:#f7cccc;color:#8d2b2b}
+  .evdel{border:none;background:transparent;color:#8aa6cc;font-size:13px;line-height:1;cursor:pointer;padding:1px 3px;flex:none}
+  .evdel:hover{color:#e05252}
+  .cempty{color:#7c96ba;font-size:11.5px;text-align:center;padding:12px 6px;line-height:1.7}
+
+  /* 📖 读书材料片段分析 */
+  .reader{display:none;margin:8px auto 0;width:296px;background:rgba(255,255,255,.97);
+    border:1px solid rgba(120,165,225,.55);border-radius:14px;padding:8px;box-sizing:border-box;
+    box-shadow:0 10px 26px rgba(40,80,140,.24)}
+  .reader.show{display:block}
+  .rdrow{display:flex;align-items:center;gap:6px}
+  .rdinfo{font-size:11px;color:#3f6296;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rdpath{font-size:10px;color:#9db4d2;word-break:break-all;line-height:1.5;margin:4px 0 0}
+  .rdprog{font-size:11px;color:#3f6296;line-height:1.5;margin-top:6px;min-height:0}
+  .rditem{cursor:default}
+  .rditem .evt{white-space:normal}
+  .rdsrc{font-size:9.5px;color:#9db4d2;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rdcached{background:#eef7f0;color:#2f7d54}
+</style>
+</head>
+<body>
+<div id="win">
+  <div class="balloon" id="balloon">读研加油～ 点 📚 选科目</div>
+  <div class="stage" id="stage">
+    <img class="img" id="img" src="assets/nianbao.png" alt="年糕" draggable="false">
+  </div>
+  <div class="bar">
+    <button class="rbtn" id="subjBtn" title="科目清单（左键展开 · 右键直接添加）">📚</button>
+    <button class="rbtn" id="calBtn" title="日程 / deadline">📅<span class="badge" id="calBadge"></span></button>
+    <button class="rbtn" id="rdBtn" title="读书材料片段：把一个文件夹里的文字截图略读一遍，各取一个短名字">📖</button>
+    <button class="rbtn" id="quitBtn" title="关掉桌宠">✕</button>
+  </div>
+
+  <div class="reader" id="reader">
+    <div class="shead"><span class="stitle">📖 读书材料片段</span></div>
+    <div class="cform">
+      <div class="rdrow">
+        <button class="sbtn primary" id="rdPick" type="button">选文件夹</button>
+        <span class="rdinfo" id="rdInfo">还没选文件夹</span>
+      </div>
+      <div class="rdpath" id="rdPath"></div>
+      <div id="rdKeyRow" style="display:none">
+        <input class="cin" id="rdKey" type="password" placeholder="DeepSeek API Key（sk-...）">
+        <div class="rdrow" style="margin-top:5px">
+          <button class="sbtn" id="rdKeySave" type="button">保存 Key</button>
+          <button class="sbtn" id="rdKeyDsh" type="button" title="从 DSH 的凭证库里取（$DSH_HOME/.credentials.yaml）">从 DSH 取</button>
+        </div>
+      </div>
+      <div class="rdprog" id="rdProg"></div>
+      <div class="rdrow">
+        <button class="sbtn primary" id="rdGo" type="button" disabled>开始略读</button>
+        <button class="sbtn" id="rdIndex" type="button" disabled>导出索引.md</button>
+      </div>
+    </div>
+    <div class="clist" id="rdList"></div>
+  </div>
+
+  <div class="calendar" id="calendar">
+    <div class="shead"><span class="stitle">📅 日程 &amp; deadline</span></div>
+    <div class="cform">
+      <input class="cin" id="calTitle" placeholder="要做什么（比如：交 HWSW 报告）">
+      <div class="crow">
+        <input class="cin" id="calDate" type="date">
+        <input class="cin" id="calTime" type="time">
+      </div>
+      <input class="cin" id="calNote" placeholder="备注（可选）">
+      <button class="sbtn primary" id="calAdd" type="button">＋ 加上</button>
+    </div>
+    <div class="clist" id="clist"></div>
+  </div>
+
+  <div class="subjects" id="subjects">
+    <div class="shead">
+      <span class="stitle">📚 我的科目</span>
+      <span class="sfile" id="sfile"></span>
+    </div>
+    <div class="slist" id="slist"></div>
+    <div class="sfoot">
+      <button class="sbtn primary" id="subjAdd" type="button">＋ 添加科目</button>
+      <button class="sbtn" id="subjImport" type="button">⇊ 整批导入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer: ipc } = require("electron");
+
+const stage = document.getElementById("stage");
+const img = document.getElementById("img");
+const balloon = document.getElementById("balloon");
+const win = document.getElementById("win");
+const subjBtn = document.getElementById("subjBtn");
+const subjBox = document.getElementById("subjects");
+const subjList = document.getElementById("slist");
+const sfile = document.getElementById("sfile");
+const quitBtn = document.getElementById("quitBtn");
+
+const LINES = [
+  "读研加油～ 点 📚 选科目",
+  "科目都在这儿，别翻文件夹啦",
+  "今天写点什么？",
+  "要不要看一眼数字设计 👀",
+  "我在屏幕角落待着，不碍事"
+];
+let lineIdx = 0;
+let sayTimer = null;
+let openDir = "";
+
+/* ---- 说话 ---- */
+function say(text) {
+  balloon.textContent = text;
+  balloon.classList.add("talk");
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(function () {
+    balloon.classList.remove("talk");
+    balloon.textContent = LINES[lineIdx];
+  }, 3600);
+}
+setInterval(function () {
+  lineIdx = (lineIdx + 1) % LINES.length;
+  if (!balloon.classList.contains("talk")) balloon.textContent = LINES[lineIdx];
+}, 9000);
+
+/* ---- 自适应窗口高度 ---- */
+function fitWindow() {
+  ipc.send("resize", { w: 320, h: Math.max(180, document.body.scrollHeight + 12) });
+}
+let fitTimer = null;
+function fit() {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(fitWindow, 60);
+}
+
+/* ---- 拖动（走 IPC，图片本身还能点） ---- */
+let drag = null;
+stage.addEventListener("mousedown", function (event) {
+  drag = { x: event.screenX, y: event.screenY };
+  stage.classList.add("drag");
+  ipc.send("drag-start", { x: event.screenX, y: event.screenY });
+  event.preventDefault();
+});
+window.addEventListener("mousemove", function (event) {
+  if (drag) ipc.send("drag-move", { x: event.screenX, y: event.screenY });
+});
+window.addEventListener("mouseup", function () {
+  if (!drag) return;
+  stage.classList.remove("drag");
+  ipc.send("drag-end");
+  drag = null;
+});
+stage.addEventListener("mouseenter", function () { stage.classList.add("hover"); });
+stage.addEventListener("mouseleave", function () { stage.classList.remove("hover"); });
+
+/* ---- 科目清单 ---- */
+let subjects = [];
+let subjOpen = false;
+
+/** 三个面板同一时刻只开一个。 */
+let openPanel = null;
+function showPanel(name) {
+  openPanel = name;
+  subjOpen = name === "subjects";
+  calOpen = name === "calendar";
+  subjBox.className = subjOpen ? "subjects show" : "subjects";
+  calBox.className = calOpen ? "calendar show" : "calendar";
+  rdBox.className = name === "reader" ? "reader show" : "reader";
+  subjBtn.className = "rbtn" + (subjOpen ? " on" : "");
+  calBtn.className = "rbtn" + (calOpen ? " on" : "");
+  rdBtn.className = "rbtn" + (name === "reader" ? " on" : "");
+  fit();
+}
+
+function showSubjects(on) {
+  subjOpen = on;
+  subjBox.className = on ? "subjects show" : "subjects";
+  subjBtn.className = "rbtn" + (on ? " on" : "");
+  if (on) { openPanel = "subjects"; showPanel("subjects"); } else if (openPanel === "subjects") showPanel(null);
+  fit();
+}
+function baseName(p) {
+  return String(p || "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() || String(p || "");
+}
+
+function renderSubjects() {
+  subjList.innerHTML = "";
+  if (!subjects.length) {
+    const empty = document.createElement("div");
+    empty.className = "sempty";
+    empty.textContent = "还没有科目。点下面「＋ 添加科目」选一个文件夹。";
+    subjList.appendChild(empty);
+  }
+  subjects.forEach(function (item, i) {
+    const row = document.createElement("div");
+    row.className = "subj" + (item.exists === false ? " missing" : "");
+    row.title = item.path + (item.exists === false ? "\n(这个路径现在不存在了)" : "");
+    const name = document.createElement("span");
+    name.className = "sn";
+    name.textContent = (item.exists === false ? "⚠️ " : "📁 ") + item.name;
+    const del = document.createElement("button");
+    del.className = "sx"; del.type = "button"; del.textContent = "🗑";
+    del.title = "从清单里移除（不动硬盘上的文件夹）";
+    del.addEventListener("click", function (event) {
+      event.stopPropagation();
+      removeSubject(i);
+    });
+    row.appendChild(name);
+    row.appendChild(del);
+    row.addEventListener("click", function () {
+      if (item.exists === false) { say("这个路径不在了：" + item.name); return; }
+      ipc.invoke("open-dir", item.path).then(function (r) {
+        say(r && r.ok ? "📂 打开啦：" + item.name : "打不开：" + ((r && r.error) || "未知原因"));
+      }).catch(function () { say("打开失败了 🥲"); });
+    });
+    subjList.appendChild(row);
+  });
+  if (subjOpen) fit();
+}
+
+function loadSubjects() {
+  return ipc.invoke("folders-get").then(function (r) {
+    subjects = (r && r.folders) || [];
+    sfile.textContent = (r && r.file) || "";
+    renderSubjects();
+  }).catch(function () {
+    subjects = [];
+    renderSubjects();
+  });
+}
+
+function persist() {
+  return ipc.invoke("folders-set", subjects.map(function (it) {
+    return { id: it.id, name: it.name, path: it.path };
+  })).then(function (r) {
+    if (r && r.ok && r.folders) subjects = r.folders;
+    return loadSubjects();
+  }).catch(function () { say("保存失败了 🥲"); });
+}
+
+function removeSubject(i) {
+  const name = subjects[i] && subjects[i].name;
+  subjects.splice(i, 1);
+  persist().then(function () { say("已移除：" + name); });
+}
+
+function addSubject() {
+  ipc.invoke("pick-dir", "").then(function (p) {
+    if (!p) return;
+    for (let i = 0; i < subjects.length; i += 1) {
+      if (subjects[i].path.toLowerCase() === p.toLowerCase()) { say("这个已经在清单里了 📚"); return; }
+    }
+    subjects.push({ id: "f" + Date.now().toString(36), name: baseName(p), path: p });
+    persist().then(function () {
+      showSubjects(true);
+      say("加好了：" + baseName(p));
+    });
+  });
+}
+
+// 挑一个根目录，把它的一级子文件夹一次全加成科目
+function importSubjects() {
+  ipc.invoke("pick-dir", "").then(function (root) {
+    if (!root) return null;
+    return ipc.invoke("subdirs", root).then(function (r) {
+      if (!r || !r.ok) { say("读不了这个目录：" + ((r && r.error) || "未知原因")); return; }
+      const have = {};
+      subjects.forEach(function (s) { have[s.path.toLowerCase()] = 1; });
+      let added = 0;
+      r.dirs.forEach(function (d) {
+        if (have[d.path.toLowerCase()]) return;
+        subjects.push({ id: "f" + Date.now().toString(36) + added, name: d.name, path: d.path });
+        added += 1;
+      });
+      if (!added) { say("这个目录下没有新科目"); return; }
+      persist().then(function () {
+        showSubjects(true);
+        say("导入了 " + added + " 个科目");
+      });
+    });
+  }).catch(function () { say("导入失败了 🥲"); });
+}
+
+subjBtn.addEventListener("click", function (event) {
+  event.stopPropagation();
+  if (subjOpen) { showSubjects(false); return; }
+  loadSubjects().then(function () { showSubjects(true); });
+});
+subjBtn.addEventListener("contextmenu", function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+  addSubject();
+});
+document.getElementById("subjAdd").addEventListener("click", function (event) {
+  event.stopPropagation();
+  addSubject();
+});
+document.getElementById("subjImport").addEventListener("click", function (event) {
+  event.stopPropagation();
+  importSubjects();
+});
+quitBtn.addEventListener("click", function () { ipc.send("quit"); });
+
+/* ---- 透明处鼠标穿透：只有悬停到年糕/按钮/面板上才接管点击 ---- */
+let msIgnore = null;
+document.addEventListener("mousemove", function (event) {
+  const el = document.elementFromPoint(event.clientX, event.clientY);
+  let hit = !!(el && el.closest && el.closest(".stage,.rbtn,.subjects,.calendar,.reader,button"));
+  if (drag) hit = true;
+  if (msIgnore !== hit) {
+    msIgnore = hit;
+    ipc.send("ignore-mouse", !hit);
+  }
+});
+
+img.addEventListener("error", function () {
+  balloon.textContent = "找不到 assets/nianbao.png 🥲";
+});
+
+/* ---- 日程 / deadline ---- */
+const calBtn = document.getElementById("calBtn");
+const calBox = document.getElementById("calendar");
+const calBadge = document.getElementById("calBadge");
+const clist = document.getElementById("clist");
+const calTitle = document.getElementById("calTitle");
+const calDate = document.getElementById("calDate");
+const calTime = document.getElementById("calTime");
+const calNote = document.getElementById("calNote");
+
+let events = [];
+let calOpen = false;
+
+function ymd(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function todayStr() { return ymd(new Date()); }
+function daysUntil(dateStr) {
+  const a = new Date(dateStr + "T00:00:00").getTime();
+  const b = new Date(todayStr() + "T00:00:00").getTime();
+  return Math.round((a - b) / 86400000);
+}
+function chipFor(ev) {
+  if (ev.done) return "已完成";
+  const d = daysUntil(ev.date);
+  if (d < 0) return "逾期 " + (-d) + " 天";
+  if (d === 0) return "今天";
+  if (d === 1) return "明天";
+  return d + " 天后";
+}
+
+function showCalendar(on) {
+  calOpen = on;
+  calBox.className = on ? "calendar show" : "calendar";
+  calBtn.className = "rbtn" + (on ? " on" : "");
+  if (on) { openPanel = "calendar"; showPanel("calendar"); } else if (openPanel === "calendar") showPanel(null);
+  fit();
+}
+
+function renderEvents() {
+  clist.innerHTML = "";
+  const sorted = events.slice().sort(function (a, b) {
+    if (a.done !== b.done) return a.done ? 1 : -1;   // 完成的沉到底下
+    return (a.date + " " + a.time).localeCompare(b.date + " " + b.time);
+  });
+
+  if (!sorted.length) {
+    const empty = document.createElement("div");
+    empty.className = "cempty";
+    empty.textContent = "还没有日程。上面填一行加进来，到点我会提醒你。";
+    clist.appendChild(empty);
+  }
+
+  sorted.forEach(function (ev) {
+    const d = daysUntil(ev.date);
+    const row = document.createElement("div");
+    row.className = "ev" + (ev.done ? " done" : d < 0 ? " late" : d <= 2 ? " soon" : "");
+
+    const tick = document.createElement("button");
+    tick.className = "evtick"; tick.type = "button";
+    tick.textContent = ev.done ? "☑" : "☐";
+    tick.title = ev.done ? "标回未完成" : "标记完成";
+    tick.addEventListener("click", function () { toggleDone(ev); });
+    row.appendChild(tick);
+
+    const body = document.createElement("div");
+    body.className = "evbody";
+    const title = document.createElement("div");
+    title.className = "evt";
+    title.textContent = ev.title;
+    title.title = ev.title + (ev.note ? "\n" + ev.note : "");
+    body.appendChild(title);
+    const meta = document.createElement("div");
+    meta.className = "evm";
+    meta.textContent = ev.date + (ev.time ? " " + ev.time : "") + (ev.note ? " · " + ev.note : "");
+    body.appendChild(meta);
+    row.appendChild(body);
+
+    const chip = document.createElement("span");
+    chip.className = "evchip";
+    chip.textContent = chipFor(ev);
+    row.appendChild(chip);
+
+    const del = document.createElement("button");
+    del.className = "evdel"; del.type = "button"; del.textContent = "🗑";
+    del.title = "删掉这条";
+    del.addEventListener("click", function () { removeEvent(ev); });
+    row.appendChild(del);
+
+    clist.appendChild(row);
+  });
+
+  const due = events.filter(function (ev) { return !ev.done && daysUntil(ev.date) <= 2; }).length;
+  calBadge.textContent = due > 9 ? "9+" : String(due);
+  calBadge.className = "badge" + (due > 0 ? " show" : "");
+  calBtn.title = due > 0 ? ("日程 / deadline（有 " + due + " 条要到期了）") : "日程 / deadline";
+
+  if (calOpen) fit();
+}
+
+function loadEvents() {
+  return ipc.invoke("calendar-get").then(function (r) {
+    events = (r && r.events) || [];
+    renderEvents();
+  }).catch(function () {
+    events = [];
+    renderEvents();
+  });
+}
+
+function saveEvents() {
+  return ipc.invoke("calendar-set", events).then(function (r) {
+    if (r && r.ok && r.events) events = r.events;
+    renderEvents();
+  }).catch(function () { say("日程保存失败了 🥲"); });
+}
+
+function addEvent() {
+  const title = calTitle.value.trim();
+  const date = calDate.value || "";
+  if (!title) { say("先写个标题吧 ✍️"); calTitle.focus(); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { say("挑一个日期 📅"); calDate.focus(); return; }
+  events.push({
+    id: "e" + Date.now().toString(36),
+    title: title,
+    date: date,
+    time: calTime.value || "",
+    note: calNote.value.trim(),
+    done: false
+  });
+  calTitle.value = "";
+  calNote.value = "";
+  saveEvents().then(function () {
+    const d = daysUntil(date);
+    say(d < 0 ? "记下了（这条已经逾期了哦）" : "记下了：" + title);
+  });
+}
+
+function toggleDone(ev) {
+  events = events.map(function (item) {
+    return item.id === ev.id ? Object.assign({}, item, { done: !item.done }) : item;
+  });
+  saveEvents();
+}
+
+function removeEvent(ev) {
+  events = events.filter(function (item) { return item.id !== ev.id; });
+  saveEvents().then(function () { say("删掉了：" + ev.title); });
+}
+
+/** 到点提醒：未完成、且 2 天内到期（含逾期）就弹一次系统通知 + 说一句。 */
+function checkReminders() {
+  const today = todayStr();
+  let first = null;
+  events.forEach(function (ev) {
+    if (ev.done) return;
+    const d = daysUntil(ev.date);
+    if (d > 2) return;
+    const key = "nb_reminded_" + ev.id + "_" + today;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch (error) {
+      /* 记不住就每次都说，不致命 */
+    }
+    const text = d < 0
+      ? "「" + ev.title + "」已经逾期 " + (-d) + " 天啦"
+      : d === 0
+        ? "今天就是「" + ev.title + "」的 deadline！"
+        : "还有 " + d + " 天：「" + ev.title + "」";
+    if (!first) first = text;
+    ipc.invoke("notify", { title: "年糕提醒", body: text }).catch(function () {});
+  });
+  if (first) say(first);
+}
+
+calBtn.addEventListener("click", function (event) {
+  event.stopPropagation();
+  if (calOpen) { showCalendar(false); return; }
+  loadEvents().then(function () {
+    if (!calDate.value) calDate.value = todayStr();
+    showCalendar(true);
+  });
+});
+document.getElementById("calAdd").addEventListener("click", function (event) {
+  event.stopPropagation();
+  addEvent();
+});
+calTitle.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") { event.preventDefault(); addEvent(); }
+});
+
+/* ---- 读书材料片段分析 ---- */
+const rdBtn = document.getElementById("rdBtn");
+const rdBox = document.getElementById("reader");
+const rdInfo = document.getElementById("rdInfo");
+const rdPath = document.getElementById("rdPath");
+const rdProg = document.getElementById("rdProg");
+const rdList = document.getElementById("rdList");
+const rdKeyRow = document.getElementById("rdKeyRow");
+const rdKey = document.getElementById("rdKey");
+const rdGo = document.getElementById("rdGo");
+const rdIndex = document.getElementById("rdIndex");
+
+let rdDir = "";
+let rdFiles = [];
+let rdResults = [];
+let rdCache = {};
+let rdBusy = false;
+
+function showReader(on) {
+  showPanel(on ? "reader" : null);
+}
+
+function rdSetInfo() {
+  rdInfo.textContent = rdDir === ""
+    ? "还没选文件夹"
+    : (rdFiles.length ? "找到 " + rdFiles.length + " 张图" : "没找到图片");
+  rdPath.textContent = rdDir;
+  rdGo.disabled = rdBusy || rdFiles.length === 0;
+  rdIndex.disabled = rdBusy || rdResults.filter(function (r) { return !r.failed; }).length === 0;
+}
+
+function rdRenderList() {
+  rdList.innerHTML = "";
+  if (!rdResults.length) {
+    const empty = document.createElement("div");
+    empty.className = "cempty";
+    empty.textContent = rdFiles.length
+      ? "还没开始。点「开始略读」，我会一张一张看过去。"
+      : "选一个文件夹，我先数数里面有多少张图。";
+    rdList.appendChild(empty);
+    return;
+  }
+  rdResults.forEach(function (item) {
+    const row = document.createElement("div");
+    row.className = "ev rditem";
+    row.title = "点一下打开这个文件夹";
+    row.addEventListener("click", function () {
+      if (rdDir) ipc.invoke("open-dir", rdDir).catch(function () {});
+    });
+
+    const body = document.createElement("div");
+    body.className = "evbody";
+    const title = document.createElement("div");
+    title.className = "evt";
+    title.textContent = (item.failed ? "⚠️ " : "🏷 ") + item.name;
+    body.appendChild(title);
+    const note = document.createElement("div");
+    note.className = "evm";
+    note.textContent = item.note || "";
+    body.appendChild(note);
+    const src = document.createElement("div");
+    src.className = "rdsrc";
+    src.textContent = item.file;
+    body.appendChild(src);
+    row.appendChild(body);
+
+    if (item.cached) {
+      const chip = document.createElement("span");
+      chip.className = "evchip rdcached";
+      chip.textContent = "缓存";
+      row.appendChild(chip);
+    }
+    rdList.appendChild(row);
+  });
+}
+
+/** 把图缩到长边 1600 再送出去：原图动辄几 MB，模型也用不上那么大。 */
+function rdShrink(dataUrl) {
+  return new Promise(function (resolve) {
+    const probe = new Image();
+    probe.onload = function () {
+      const max = 1600;
+      const scale = Math.min(1, max / Math.max(probe.width, probe.height));
+      const w = Math.max(1, Math.round(probe.width * scale));
+      const h = Math.max(1, Math.round(probe.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(probe, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL("image/jpeg", 0.9));
+      } catch (error) {
+        resolve(dataUrl);
+      }
+    };
+    probe.onerror = function () { resolve(dataUrl); };
+    probe.src = dataUrl;
+  });
+}
+
+/** 模型只吐两行；拿不到就退回原文件名。 */
+function rdParse(text, filename) {
+  const lines = String(text || "").split(/\r?\n/)
+    .map(function (s) { return s.trim(); })
+    .filter(function (s) { return s !== ""; });
+  const clean = function (s) {
+    return String(s || "")
+      .replace(/^\s*\d+\s*[.、)]\s*/, "")
+      .replace(/^[#*\-\s]+/, "")
+      .replace(/^[「『"'《]+/, "")
+      .replace(/[」』"'》]+$/, "")
+      .trim();
+  };
+  let name = clean(lines[0] || "");
+  const note = clean(lines[1] || "");
+  if (name === "" || name.length > 24) name = filename.replace(/\.[^.]+$/, "").slice(0, 20);
+  return { name: name.slice(0, 24), note: note.slice(0, 80) };
+}
+
+document.getElementById("rdPick").addEventListener("click", function (event) {
+  event.stopPropagation();
+  ipc.invoke("pick-dir", rdDir).then(function (dir) {
+    if (!dir) return null;
+    rdDir = dir;
+    rdResults = [];
+    return ipc.invoke("reader-scan", dir).then(function (result) {
+      if (!result || !result.ok) {
+        say("读不了这个文件夹：" + ((result && result.error) || "未知原因"));
+        return;
+      }
+      rdFiles = result.files || [];
+      rdProg.textContent = rdFiles.length === 0
+        ? "这个文件夹里没有图片（png / jpg / webp / bmp / gif / tif）"
+        : "";
+      rdRenderList();
+      rdSetInfo();
+      fit();
+    });
+  }).catch(function () { say("选文件夹失败了 🥲"); });
+});
+
+document.getElementById("rdKeySave").addEventListener("click", function (event) {
+  event.stopPropagation();
+  const value = rdKey.value.trim();
+  if (value === "") { say("先粘一个 Key 进去 🔑"); return; }
+  ipc.invoke("key-set", value).then(function (result) {
+    if (result && result.ok) {
+      rdKey.value = "";
+      rdKeyRow.style.display = "none";
+      say("Key 存好了 🔑");
+    } else {
+      say("Key 没存上 🥲");
+    }
+  });
+});
+
+document.getElementById("rdKeyDsh").addEventListener("click", function (event) {
+  event.stopPropagation();
+  ipc.invoke("key-from-dsh").then(function (result) {
+    if (result && result.ok) {
+      rdKeyRow.style.display = "none";
+      say("从 DSH 取到 Key 了 🔑（尾号 " + result.tail + "）");
+    } else {
+      say("没取到：" + ((result && result.error) || "未知原因"));
+    }
+  });
+});
+
+rdGo.addEventListener("click", async function (event) {
+  event.stopPropagation();
+  if (rdBusy || rdFiles.length === 0) return;
+
+  const status = await ipc.invoke("key-status");
+  if (!status || status.has !== true) {
+    rdKeyRow.style.display = "block";
+    rdProg.textContent = "还没有 API Key：先在上面粘一个 sk-... 再开始。";
+    showReader(true);
+    return;
+  }
+  rdKeyRow.style.display = "none";
+
+  const cacheResult = await ipc.invoke("reader-cache-get");
+  rdCache = (cacheResult && cacheResult.cache) || {};
+
+  rdBusy = true;
+  rdSetInfo();
+  rdResults = [];
+  rdRenderList();
+
+  let done = 0, fresh = 0, reused = 0, failed = 0;
+  for (const file of rdFiles) {
+    done += 1;
+    const cacheKey = file.path + "|" + file.size + "|" + file.mtime;
+    const hit = rdCache[cacheKey];
+    if (hit) {
+      rdResults.push({ file: file.name, name: hit.name, note: hit.note, cached: true });
+      reused += 1;
+      rdProg.textContent = "进度 " + done + "/" + rdFiles.length + " · 用缓存：" + file.name;
+      rdRenderList();
+      continue;
+    }
+
+    rdProg.textContent = "进度 " + done + "/" + rdFiles.length + " · 正在看 " + file.name + " …";
+    // 让界面把这一帧画出来再发请求
+    await new Promise(function (r) { setTimeout(r, 16); });
+
+    const read = await ipc.invoke("reader-read", file.path);
+    if (!read || !read.ok) {
+      rdResults.push({ file: file.name, name: "读不了这个文件", note: (read && read.error) || "", failed: true });
+      failed += 1;
+      rdRenderList();
+      continue;
+    }
+
+    const shrunk = await rdShrink(read.dataUrl);
+    const answer = await ipc.invoke("reader-analyze", { dataUrl: shrunk });
+    if (!answer || !answer.ok) {
+      if (answer && answer.error === "no-key") rdKeyRow.style.display = "block";
+      rdResults.push({
+        file: file.name,
+        name: "没读成功",
+        note: (answer && answer.error) || "未知错误",
+        failed: true
+      });
+      failed += 1;
+      rdRenderList();
+      continue;
+    }
+
+    const parsed = rdParse(answer.text, file.name);
+    rdCache[cacheKey] = { name: parsed.name, note: parsed.note, at: Date.now() };
+    rdResults.push({ file: file.name, name: parsed.name, note: parsed.note });
+    fresh += 1;
+    rdRenderList();
+    await ipc.invoke("reader-cache-set", rdCache);
+  }
+
+  rdBusy = false;
+  rdProg.textContent = "完成 " + rdResults.length + " 条（新读 " + fresh + " · 缓存 " + reused
+    + (failed ? " · 失败 " + failed : "") + "）";
+  rdSetInfo();
+  say("读完啦：" + rdResults.length + " 个片段");
+  fit();
+});
+
+rdIndex.addEventListener("click", function (event) {
+  event.stopPropagation();
+  const entries = rdResults
+    .filter(function (r) { return !r.failed; })
+    .map(function (r) { return { name: r.name, note: r.note, file: r.file }; });
+  if (entries.length === 0) { say("还没有可导出的结果"); return; }
+  ipc.invoke("reader-write-index", { dir: rdDir, entries: entries }).then(function (result) {
+    if (result && result.ok) {
+      say("索引写好了：_年糕索引.md");
+      rdProg.textContent = result.file;
+    } else {
+      say("写索引失败：" + ((result && result.error) || "未知原因"));
+    }
+  });
+});
+
+rdBtn.addEventListener("click", function (event) {
+  event.stopPropagation();
+  if (openPanel === "reader") { showReader(false); return; }
+  ipc.invoke("key-status").then(function (status) {
+    rdKeyRow.style.display = (status && status.has) ? "none" : "block";
+    showReader(true);
+  }).catch(function () { showReader(true); });
+});
+
+loadSubjects().then(fit);
+// 启动后先看一眼日程，之后每 5 分钟再看一眼（到期的会弹系统通知 + 说一句）
+loadEvents().then(function () {
+  setTimeout(checkReminders, 900);
+  setInterval(checkReminders, 5 * 60 * 1000);
+});
+window.addEventListener("load", fit);
+</script>
+</body>
+</html>
