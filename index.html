@@ -141,7 +141,7 @@
   <div class="calendar" id="calendar">
     <div class="shead"><span class="stitle">📅 日程 &amp; deadline</span></div>
     <div class="cform">
-      <input class="cin" id="calTitle" placeholder="要做什么（比如：交 HWSW 报告）">
+      <input class="cin" id="calTitle" placeholder="要做什么（比如：交作业 / 组会汇报）">
       <div class="crow">
         <input class="cin" id="calDate" type="date">
         <input class="cin" id="calTime" type="time">
@@ -764,12 +764,12 @@ rdGo.addEventListener("click", async function (event) {
 
   const status = await ipc.invoke("key-status");
   if (!status || status.has !== true) {
-    rdKeyRow.style.display = "block";
+    rdShowKeyRow(status);
     rdProg.textContent = "还没有 API Key：先在上面粘一个 sk-... 再开始。";
     showReader(true);
     return;
   }
-  rdKeyRow.style.display = "none";
+  rdShowKeyRow(status);
 
   const cacheResult = await ipc.invoke("reader-cache-get");
   rdCache = (cacheResult && cacheResult.cache) || {};
@@ -807,7 +807,9 @@ rdGo.addEventListener("click", async function (event) {
     const shrunk = await rdShrink(read.dataUrl);
     const answer = await ipc.invoke("reader-analyze", { dataUrl: shrunk });
     if (!answer || !answer.ok) {
-      if (answer && answer.error === "no-key") rdKeyRow.style.display = "block";
+      if (answer && answer.error === "no-key") {
+        rdShowKeyRow(await ipc.invoke("key-status"));
+      }
       rdResults.push({
         file: file.name,
         name: "没读成功",
@@ -851,11 +853,19 @@ rdIndex.addEventListener("click", function (event) {
   });
 });
 
+/** 没 Key 就把输入行露出来；「从 DSH 取」只在装了 DSH 的机器上显示。 */
+function rdShowKeyRow(status) {
+  const has = status && status.has === true;
+  rdKeyRow.style.display = has ? "none" : "block";
+  document.getElementById("rdKeyDsh").style.display =
+    (status && status.canFromDsh === true) ? "" : "none";
+}
+
 rdBtn.addEventListener("click", function (event) {
   event.stopPropagation();
   if (openPanel === "reader") { showReader(false); return; }
   ipc.invoke("key-status").then(function (status) {
-    rdKeyRow.style.display = (status && status.has) ? "none" : "block";
+    rdShowKeyRow(status);
     showReader(true);
   }).catch(function () { showReader(true); });
 });

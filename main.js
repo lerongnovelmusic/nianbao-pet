@@ -354,7 +354,13 @@ function writeConfig(patch) {
 
 ipcMain.handle("key-status", () => {
   const key = String(readConfig().apiKey || "");
-  return { ok: true, has: key.length > 0, tail: key.length > 4 ? key.slice(-4) : "" };
+  return {
+    ok: true,
+    has: key.length > 0,
+    tail: key.length > 4 ? key.slice(-4) : "",
+    // 「从 DSH 取 Key」只在真的装了 DSH 的机器上才有意义，界面上据此决定要不要显示
+    canFromDsh: fs.existsSync(dshCredentialsFile())
+  };
 });
 
 ipcMain.handle("key-set", (_event, key) => {
@@ -366,15 +372,20 @@ ipcMain.handle("key-set", (_event, key) => {
   }
 });
 
+/** DSH 存 DeepSeek Key 的地方。 */
+function dshCredentialsFile() {
+  const home = process.env.DSH_HOME || path.join(app.getPath("home"), ".dsh");
+  return path.join(home, ".credentials.yaml");
+}
+
 /**
  * 从 DSH 的凭证库里取 Key，省得再粘一遍。
  *
  * DSH 把它存在 $DSH_HOME/.credentials.yaml 里，形如 `DEEPSEEK_API_KEY: sk-…`。
- * 只在用户明确点这个按钮时才读，不做隐式兜底。
+ * 只在用户明确点这个按钮时才读，不做隐式兜底。没装 DSH 的机器上界面上不会显示这个按钮。
  */
 ipcMain.handle("key-from-dsh", () => {
-  const home = process.env.DSH_HOME || path.join(app.getPath("home"), ".dsh");
-  const file = path.join(home, ".credentials.yaml");
+  const file = dshCredentialsFile();
   try {
     const text = fs.readFileSync(file, "utf8");
     const match = text.match(/^\s*DEEPSEEK_API_KEY\s*:\s*([^\s#]+)\s*$/m);

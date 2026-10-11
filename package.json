@@ -1,6 +1,6 @@
 {
   "name": "nianbao-pet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "productName": "Nianbao Pet",
   "description": "年糕鲸鱼娘桌宠：无边框透明置顶窗口，点 📚 选科目，用资源管理器打开对应文件夹。可独立运行，也可由 DSH 的 whale-folders 插件拉起。",
   "main": "main.js",
